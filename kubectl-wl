@@ -1,0 +1,31 @@
+#!/usr/bin/env python3
+
+import argparse
+
+# Check user input.
+parser = argparse.ArgumentParser(description='Start a terminal session on a kubernetes node')
+parser.add_argument('--node', '-n', help='target node to start the shell on Windows', action="store")
+parser.add_argument('--windows', '-w', help='target node to start the shell on Linux', action="store")
+parser.add_argument('--version', '-v', help='Print the version',
+                    action='version', version='%(prog)s 1.2')
+args = parser.parse_args()
+
+#Select action Windows/Linux and call the functions.
+if args.node:
+    print("This is a Linux node")
+    print(args.node)
+    linux_node = args.node
+    print(linux_node)
+elif args.windows:
+    print("This is a Windows node")
+    print(args.windows)
+    windows_node = args.windows
+    print(windows_node)
+
+#Functions to start on Windows or Linux
+def term_shell_linux():
+    print("starting a terminal session on Linux")
+    print(f"Starting a node in {node}.")
+
+def term_shell_windows():
+    print("starting a terminal session on Windows")
