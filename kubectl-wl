@@ -1,31 +1,80 @@
 #!/usr/bin/env python3
 
 import argparse
+from kubernetes import client, config
+from kubernetes.client.api import core_v1_api
+from kubernetes.stream import stream
+from kubernetes.client.rest import ApiException
+from time import localtime, mktime, strftime
+
+# Load the config file and v1 api group this will instantiate a client for that API group endpoint.
+config.load_kube_config()
+v1 = client.CoreV1Api()
+
+
+# Getting the nodes and checking if the passed node exist.
+
+def node_check(node_to_check):
+    nodes = []
+    ret = v1.list_node(watch=False)
+
+    for item in ret.items:
+        nodename = item.metadata.name
+        nodes.append(nodename)
+    if node_to_check in nodes:
+        print(f"Node exist in your cluster")
+        existing_node = node_to_check
+        return existing_node
+    else:
+        print(
+            f"Node does not exist in your cluster, try again with the correct node name..")
+        exit()
+
+
+# Functions to start on Windows or Linux
+def term_shell_linux(linuxnode):
+    print(f"Starting a a terminal on Linux node: {linuxnode}..")
+
+    start_time = localtime()
+    print(f"Timer started at {strftime('%d-%m-%y-%X', start_time)}")
+
+    podname = linuxnode+"-"+strftime('%d-%m-%Y-%H-%M', start_time)
+
+    def term_shell_windows(windowsnode):
+        print(f"starting an ssh terminal session on Windows node: {windowsnode}")
+
 
 # Check user input.
-parser = argparse.ArgumentParser(description='Start a terminal session on a kubernetes node')
-parser.add_argument('--node', '-n', help='target node to start the shell on Windows', action="store")
-parser.add_argument('--windows', '-w', help='target node to start the shell on Linux', action="store")
+parser = argparse.ArgumentParser(
+    description='Start a terminal session on a kubernetes node')
+parser.add_argument(
+    '--node', '-n', help='target node to start the shell on Windows', action="store")
+parser.add_argument(
+    '--windows', '-w', help='target node to start the shell on Linux', action="store")
 parser.add_argument('--version', '-v', help='Print the version',
                     action='version', version='%(prog)s 1.2')
 args = parser.parse_args()
 
-#Select action Windows/Linux and call the functions.
+# Select action Windows/Linux and call the functions.
 if args.node:
-    print("This is a Linux node")
-    print(args.node)
-    linux_node = args.node
-    print(linux_node)
+    print(f"You selected a Linux node {args.node}")
+    print("Checking if the node exist...")
+    node_to_check = args.node
+    existing_node = node_check(node_to_check)
+    print(f"Node name is {existing_node}")
+    term_shell_linux(existing_node)
+
 elif args.windows:
-    print("This is a Windows node")
-    print(args.windows)
-    windows_node = args.windows
-    print(windows_node)
+    print(f"You selected a Windows node: {args.windows}")
+    print("Checking if the node exist...")
+    node_to_check = args.windows
+    existing_node = node_check(node_to_check)
+    term_shell_windows(existing_node)
 
-#Functions to start on Windows or Linux
-def term_shell_linux():
-    print("starting a terminal session on Linux")
-    print(f"Starting a node in {node}.")
 
-def term_shell_windows():
-    print("starting a terminal session on Windows")
+"""
+to do:
+1- Create the pod for windows and linux https://github.com/kubernetes-client/python/blob/master/examples/notebooks/create_pod.ipynb
+2- Add another argument to copy data from pods.
+3- Collect troubleshooting logs with hostpath.
+"""
